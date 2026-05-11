@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DayStack — Your Schedule</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161f;
+    --surface2: #1a1e2b;
+    --surface3: #222638;
+    --border: #2a2f42;
+    --amber: #f5a623;
+    --amber-dim: #c4861c;
+    --amber-glow: rgba(245,166,35,0.12);
+    --green: #4ade80;
+    --green-glow: rgba(74,222,128,0.1);
+    --red: #f87171;
+    --blue: #60a5fa;
+    --muted: #4a5270;
+    --text: #e8ecf5;
+    --text2: #8b91a8;
+    --text3: #4a5270;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .app-shell.locked { display: none; }
+
+  .svg-icon {
+    width: 15px;
+    height: 15px;
+    display: inline-block;
+    vertical-align: -2px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+  }
+
+  .icon-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  /* AUTH */
+  #auth-screen {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 50% 0%, rgba(245,166,35,0.16), transparent 34%),
+      radial-gradient(circle at 0% 80%, rgba(96,165,250,0.08), transparent 34%),
+      var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 22px;
+  }
+  #auth-screen.hidden { display: none; }
+
+  .auth-card {
+    width: 100%;
+    max-width: 420px;
+    background: rgba(19,22,31,0.92);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 26px;
+    box-shadow: 0 24px 90px rgba(0,0,0,0.45);
+    backdrop-filter: blur(18px);
+  }
+
+  .auth-mark {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 26px;
+  }
+
+  .auth-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--amber);
+    letter-spacing: -0.6px;
+  }
+  .auth-logo span { color: var(--text2); font-weight: 400; }
+
+  .auth-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--green);
+    background: var(--green-glow);
+    border: 1px solid rgba(74,222,128,0.2);
+    border-radius: 999px;
+    padding: 5px 9px;
+  }
+
+  .auth-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 30px;
+    line-height: 1.05;
+    letter-spacing: -1px;
+    margin-bottom: 10px;
+  }
+
+  .auth-sub {
+    color: var(--text2);
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 22px;
+  }
+
+  .auth-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 5px;
+    margin-bottom: 18px;
+  }
+
+  .auth-tab {
+    border: none;
+    background: transparent;
+    color: var(--text2);
+    padding: 9px;
+    border-radius: 7px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .auth-tab.active {
+    color: #000;
+    background: var(--amber);
+  }
+
+  .auth-foot {
+    margin-top: 16px;
+    color: var(--text3);
+    font-size: 11px;
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  .auth-error {
+    min-height: 18px;
+    margin-top: 12px;
+    color: var(--red);
+    font-size: 12px;
+  }
+
+  .auth-demo { margin-top: 12px; width: 100%; }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(13,15,20,0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; height: 56px;
+  }
+  .nav-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800; font-size: 20px;
+    color: var(--amber); letter-spacing: -0.5px;
+  }
+  .nav-logo span { color: var(--text2); font-weight: 400; }
+  .nav-tabs { display: flex; gap: 4px; }
+  .nav-tab {
+    padding: 6px 16px; border-radius: 6px; cursor: pointer;
+    font-size: 13px; font-weight: 500; color: var(--text2);
+    border: none; background: transparent; transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .nav-tab:hover { color: var(--text); background: var(--surface2); }
+  .nav-tab.active { color: var(--amber); background: var(--amber-glow); }
+  .nav-right { display: flex; align-items: center; gap: 10px; }
+  #live-clock {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; color: var(--text2);
+  }
+  .btn-add {
+    background: var(--amber); color: #000;
+    border: none; padding: 7px 14px; border-radius: 6px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+  }
+  .btn-add:hover { background: #ffc542; }
+
+  main { padding-top: 56px; min-height: 100vh; }
+  .view { display: none; padding: 24px; max-width: 900px; margin: 0 auto; }
+  .view.active { display: block; }
+
+  .section-header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 20px; gap: 12px;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px; font-weight: 700; color: var(--text);
+  }
+  .section-sub { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+  .day-strip {
+    display: flex; gap: 8px; margin-bottom: 24px; overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .day-chip {
+    flex-shrink: 0;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 10px 14px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: var(--surface);
+    cursor: pointer; transition: all 0.2s; min-width: 56px;
+  }
+  .day-chip:hover { border-color: var(--amber-dim); }
+  .day-chip.active { border-color: var(--amber); background: var(--amber-glow); }
+  .day-chip.free { border-color: rgba(74,222,128,0.4); }
+  .day-chip .dname { font-size: 11px; color: var(--text2); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+  .day-chip .dnum { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-top: 2px; }
+  .day-chip.active .dname, .day-chip.active .dnum { color: var(--amber); }
+  .day-chip .dot { width: 5px; height: 5px; border-radius: 50%; margin-top: 5px; background: transparent; }
+  .day-chip.free .dot { background: var(--green); }
+  .day-chip.active .dot { background: var(--amber); }
+
+  .tl-block {
+    display: flex; gap: 14px; margin-bottom: 6px;
+    position: relative; align-items: stretch;
+  }
+  .tl-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--text3); width: 44px;
+    flex-shrink: 0; padding-top: 14px; text-align: right;
+    line-height: 1;
+  }
+  .tl-line { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 16px; }
+  .tl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 16px; background: var(--border); }
+  .tl-bar { width: 2px; flex: 1; background: var(--border); margin-top: 4px; min-height: 20px; }
+  .tl-card {
+    flex: 1; padding: 12px 14px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: var(--surface);
+    margin-bottom: 6px; position: relative; overflow: hidden;
+    transition: all 0.2s; min-width: 0;
+  }
+  .tl-card:hover { border-color: var(--surface3); background: var(--surface2); }
+  .tl-card.type-sleep { border-left: 3px solid #7c6aff; }
+  .tl-card.type-work  { border-left: 3px solid var(--amber); }
+  .tl-card.type-break { border-left: 3px solid var(--green); }
+  .tl-card.type-study { border-left: 3px solid var(--blue); }
+  .tl-card.type-free  { border-left: 3px solid var(--text3); }
+  .tl-dot.type-sleep { background: #7c6aff; }
+  .tl-dot.type-work  { background: var(--amber); }
+  .tl-dot.type-break { background: var(--green); }
+  .tl-dot.type-study { background: var(--blue); }
+  .tl-dot.type-free  { background: var(--text3); }
+  .card-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .card-label { font-size: 14px; font-weight: 500; word-break: break-word; }
+  .card-range { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text2); margin-top: 3px; }
+  .card-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .icon-btn {
+    width: 26px; height: 26px; border-radius: 5px;
+    background: var(--surface3); border: 1px solid var(--border);
+    color: var(--text2); cursor: pointer; font-size: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .icon-btn:hover { background: var(--surface3); color: var(--text); border-color: var(--amber); }
+  .card-badge {
+    font-size: 10px; padding: 2px 7px; border-radius: 20px;
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .badge-sleep { background: rgba(124,106,255,0.15); color: #a393ff; }
+  .badge-work  { background: var(--amber-glow); color: var(--amber); }
+  .badge-break { background: var(--green-glow); color: var(--green); }
+  .badge-study { background: rgba(96,165,250,0.12); color: var(--blue); }
+  .badge-free  { background: var(--surface3); color: var(--text2); }
+  .empty-day {
+    text-align: center; padding: 60px 20px; color: var(--text2);
+    border: 1px dashed var(--border); border-radius: var(--radius);
+  }
+  .empty-day h3 { font-family: 'Syne', sans-serif; font-size: 18px; margin-bottom: 8px; color: var(--text); }
+
+  .week-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .week-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; cursor: pointer;
+    transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .week-card:hover { border-color: var(--amber-dim); transform: translateY(-1px); }
+  .week-card .wc-day { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; }
+  .week-card .wc-date { font-size: 12px; color: var(--text2); margin-bottom: 12px; }
+  .week-card .wc-status {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; font-weight: 500; padding: 4px 10px;
+    border-radius: 20px; margin-bottom: 10px;
+  }
+  .wc-status.working { background: var(--amber-glow); color: var(--amber); }
+  .wc-status.free { background: var(--green-glow); color: var(--green); }
+  .wc-blocks { display: flex; flex-direction: column; gap: 4px; }
+  .wc-block-pill {
+    font-size: 11px; color: var(--text2); padding: 3px 8px;
+    background: var(--surface2); border-radius: 4px; display: flex; gap: 6px;
+  }
+  .wc-block-pill span:first-child { color: var(--text3); font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+
+  .study-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin-bottom: 10px;
+    transition: all 0.25s;
+  }
+  .study-card.done { opacity: 0.5; }
+  .study-card.done .study-title { text-decoration: line-through; color: var(--text2); }
+  .study-row { display: flex; align-items: center; gap: 10px; }
+  .study-check {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 2px solid var(--border); cursor: pointer;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; color: #000;
+  }
+  .study-check .svg-icon { width: 12px; height: 12px; }
+  .study-card.done .study-check { background: var(--green); border-color: var(--green); color: #000; }
+  .study-title { font-size: 14px; font-weight: 500; flex: 1; min-width: 0; word-break: break-word; }
+  .study-meta { display: flex; align-items: center; gap: 10px; margin-top: 8px; margin-left: 30px; flex-wrap: wrap; }
+  .study-meta span { font-size: 11px; color: var(--text2); }
+  .study-timer-bar { height: 3px; background: var(--surface3); border-radius: 2px; margin-top: 8px; margin-left: 30px; overflow: hidden; }
+  .study-timer-fill { height: 100%; background: var(--blue); border-radius: 2px; transition: width 1s linear; }
+  .done-at { font-size: 10px; color: var(--green); font-family: 'JetBrains Mono', monospace; margin-left: auto; white-space: nowrap; }
+  .timer-active .study-check { border-color: var(--blue); animation: pulse-blue 1.5s infinite; }
+  @keyframes pulse-blue { 0%,100%{box-shadow:0 0 0 0 rgba(96,165,250,0.4)} 50%{box-shadow:0 0 0 6px rgba(96,165,250,0)} }
+
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
+    display: none; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; width: 100%; max-width: 460px;
+    padding: 24px; animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  .modal-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 12px; color: var(--text2); font-weight: 500; margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-input, .form-select {
+    width: 100%; padding: 10px 12px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text); font-size: 14px; font-family: 'DM Sans', sans-serif;
+    outline: none; transition: border 0.2s;
+  }
+  .form-input:focus, .form-select:focus { border-color: var(--amber); }
+  .form-select option { background: var(--surface2); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-primary {
+    flex: 1; padding: 10px; background: var(--amber); color: #000;
+    border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600;
+    cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+  }
+  .btn-primary:hover { background: #ffc542; }
+  .btn-ghost {
+    padding: 10px 16px; background: transparent; color: var(--text2);
+    border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14px;
+    cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+  }
+  .btn-ghost:hover { border-color: var(--red); color: var(--red); }
+
+  #toast-container {
+    position: fixed; bottom: 24px; right: 24px; z-index: 500;
+    display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+  }
+  .toast {
+    background: var(--surface); border: 1px solid var(--amber);
+    border-left: 4px solid var(--amber); border-radius: var(--radius-sm);
+    padding: 12px 16px; min-width: 280px; max-width: 340px;
+    animation: toastIn 0.3s ease; pointer-events: all;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .toast.study-toast { border-color: var(--blue); border-left-color: var(--blue); }
+  @keyframes toastIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+  .toast-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .toast-body { font-size: 12px; color: var(--text2); }
+  .toast-dismiss {
+    position: absolute; top: 8px; right: 10px; background: none; border: none;
+    color: var(--text2); cursor: pointer; font-size: 14px;
+  }
+
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 14px;
+  }
+  .stat-val { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; color: var(--amber); }
+  .stat-lbl { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .ahead-tabs { display: flex; gap: 6px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px; }
+  .ahead-tab {
+    padding: 6px 14px; border-radius: 6px; cursor: pointer;
+    font-size: 13px; font-weight: 500; color: var(--text2);
+    border: 1px solid var(--border); background: transparent; transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif; white-space: nowrap;
+  }
+  .ahead-tab.active { color: var(--amber); border-color: var(--amber); background: var(--amber-glow); }
+
+  @media (max-width: 720px) {
+    nav {
+      height: auto;
+      min-height: 56px;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px 14px;
+    }
+
+    main { padding-top: 104px; }
+
+    .nav-logo { font-size: 18px; }
+
+    .nav-tabs {
+      order: 3;
+      width: 100%;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .nav-tab {
+      flex: 1;
+      padding: 9px 6px;
+      text-align: center;
+    }
+
+    .nav-right { gap: 8px; }
+
+    #live-clock { display: none; }
+
+    .btn-add { padding: 8px 10px; }
+
+    .view { padding: 16px; }
+
+    .section-header {
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .section-header > div:first-child {
+      min-width: 0;
+    }
+
+    .section-title { font-size: 20px; }
+
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .stats-row .stat-card:last-child { grid-column: span 2; }
+
+    .week-grid { grid-template-columns: 1fr; }
+
+    .tl-block { gap: 8px; }
+    .tl-time { width: 38px; font-size: 10px; }
+    .tl-line { width: 12px; }
+
+    .card-row {
+      align-items: flex-start;
+    }
+
+    .card-row > div:last-child {
+      flex-direction: column;
+      align-items: flex-end !important;
+      gap: 6px !important;
+    }
+
+    .modal {
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .form-row { grid-template-columns: 1fr; }
+
+    #toast-container {
+      left: 16px;
+      right: 16px;
+      bottom: 16px;
+    }
+
+    .toast {
+      min-width: 0;
+      max-width: none;
+      width: 100%;
+    }
+
+    .auth-card { padding: 22px; }
+    .auth-title { font-size: 27px; }
+  }
+
+  @media (max-width: 380px) {
+    .auth-card { padding: 20px 16px; }
+    .nav-right .btn-ghost { padding: 8px 10px; }
+    .section-header { flex-direction: column; }
+    .stats-row { grid-template-columns: 1fr; }
+    .stats-row .stat-card:last-child { grid-column: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-mark">
+      <div class="auth-logo">DayStack <span>·</span></div>
+      <div class="auth-pill"><span id="auth-lock-icon"></span> Private</div>
+    </div>
+
+    <h1 class="auth-title" id="auth-title">Welcome back</h1>
+    <p class="auth-sub" id="auth-sub">Sign in to continue to your schedule, study tasks, and planning dashboard.</p>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="signin-tab" onclick="setAuthMode('signin')">Sign In</button>
+      <button class="auth-tab" id="signup-tab" onclick="setAuthMode('signup')">Create Account</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" id="auth-email" type="email" placeholder="you@example.com">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" id="auth-password" type="password" placeholder="Enter password">
+    </div>
+
+    <button class="btn-primary" id="auth-main-btn" onclick="mockLogin()">Sign In</button>
+    <button class="btn-ghost auth-demo" onclick="mockLogin()">Preview App</button>
+
+    <div class="auth-error" id="auth-error"></div>
+    <div class="auth-foot">Prototype only. Login screen is visual for now. Firebase can be connected after you approve the look.</div>
+  </div>
+</div>
+
+<div class="app-shell locked" id="app-shell">
+<nav>
+  <div class="nav-logo">DayStack <span>·</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchView('today')">Today</button>
+    <button class="nav-tab" onclick="switchView('ahead')">Ahead</button>
+    <button class="nav-tab" onclick="switchView('study')">Study</button>
+  </div>
+  <div class="nav-right">
+    <span id="live-clock">--:--:--</span>
+    <button class="btn-add" onclick="openAddBlock()"><span class="icon-label"><span id="nav-add-icon"></span> Block</span></button>
+    <button class="btn-ghost" onclick="logoutUser()"><span class="icon-label"><span id="nav-logout-icon"></span> Out</span></button>
+  </div>
+</nav>
+
+<main>
+  <div id="view-today" class="view active">
+    <div class="section-header">
+      <div>
+        <div class="section-title" id="today-heading">Monday</div>
+        <div class="section-sub" id="today-date-sub">Loading...</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="icon-btn" style="width:auto;padding:0 12px;" onclick="openEditDay()"><span class="icon-label"><span id="edit-day-icon"></span> Edit Day</span></button>
+      </div>
+    </div>
+
+    <div class="stats-row" id="today-stats"></div>
+    <div class="day-strip" id="day-strip"></div>
+    <div class="timeline-wrap" id="timeline"></div>
+  </div>
+
+  <div id="view-ahead" class="view">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Schedule Ahead</div>
+        <div class="section-sub">Plan your upcoming days and weeks</div>
+      </div>
+      <button class="btn-add" onclick="openAddDayModal()"><span class="icon-label"><span id="template-add-icon"></span> Day Template</span></button>
+    </div>
+    <div class="ahead-tabs" id="ahead-tabs"></div>
+    <div class="week-grid" id="week-grid"></div>
+  </div>
+
+  <div id="view-study" class="view">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Study Tasks</div>
+        <div class="section-sub">Declare, time, and complete your learning goals</div>
+      </div>
+      <button class="btn-add" onclick="openAddStudyTask()"><span class="icon-label"><span id="study-add-icon"></span> Task</span></button>
+    </div>
+    <div id="study-list"></div>
+  </div>
+</main>
+</div>
+
+<div class="modal-overlay" id="modal-block">
+  <div class="modal">
+    <div class="modal-title" id="modal-block-title">Add Time Block</div>
+    <div class="form-group">
+      <label class="form-label">Label</label>
+      <input class="form-input" id="b-label" placeholder="e.g. Deep Work, Gym, Study">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">From</label>
+        <input class="form-input" type="time" id="b-from">
+      </div>
+      <div class="form-group">
+        <label class="form-label">To</label>
+        <input class="form-input" type="time" id="b-to">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Type</label>
+      <select class="form-select" id="b-type">
+        <option value="work">Work</option>
+        <option value="sleep">Sleep</option>
+        <option value="break">Break</option>
+        <option value="study">Study</option>
+        <option value="free">Free / Personal</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Day</label>
+      <select class="form-select" id="b-day"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal('modal-block')">Cancel</button>
+      <button class="btn-primary" onclick="saveBlock()">Save Block</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-edit-day">
+  <div class="modal">
+    <div class="modal-title">Edit Day Schedule</div>
+    <div id="edit-day-blocks" style="max-height:320px;overflow-y:auto;margin-bottom:16px;"></div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="closeModal('modal-edit-day')">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-study">
+  <div class="modal">
+    <div class="modal-title">New Study Task</div>
+    <div class="form-group">
+      <label class="form-label">What to study</label>
+      <input class="form-input" id="st-title" placeholder="e.g. React hooks, Algorithm chapter 3">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Duration (min)</label>
+        <input class="form-input" type="number" id="st-duration" placeholder="45" min="5" max="480">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Subject</label>
+        <input class="form-input" id="st-subject" placeholder="DSA, Networking">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal('modal-study')">Cancel</button>
+      <button class="btn-primary" onclick="saveStudyTask()">Add Task</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+const SVG = {
+  plus: '<svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  edit: '<svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/></svg>',
+  close: '<svg class="svg-icon" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  check: '<svg class="svg-icon" viewBox="0 0 24 24"><path d="m20 6-11 11-5-5"/></svg>',
+  play: '<svg class="svg-icon" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z"/></svg>',
+  pause: '<svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 4v16M14 4v16"/></svg>',
+  book: '<svg class="svg-icon" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15Z"/></svg>',
+  clock: '<svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  bolt: '<svg class="svg-icon" viewBox="0 0 24 24"><path d="m13 2-9 13h7l-1 7 9-13h-7l1-7Z"/></svg>',
+  spark: '<svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 3 9.5 9.5 3 12l6.5 2.5L12 21l2.5-6.5L21 12l-6.5-2.5L12 3Z"/></svg>',
+  lock: '<svg class="svg-icon" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+  logout: '<svg class="svg-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>',
+  trash: '<svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 15H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>'
+};
+
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DAYS_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+let state = loadState() || {
+  blocks: {},
+  studyTasks: [],
+  aheadWeeks: 2,
+};
+
+function saveState() { try { localStorage.setItem('daystack-prototype', JSON.stringify(state)); } catch(e){} }
+function loadState() { try { return JSON.parse(localStorage.getItem('daystack-prototype')); } catch(e){ return null; } }
+
+function seedExample() {
+  const today = todayKey();
+  if (!state.blocks[today] || !state.blocks[today].length) {
+    state.blocks[today] = [
+      { id: uid(), label: 'Sleep', from: '01:00', to: '09:00', type: 'sleep' },
+      { id: uid(), label: 'Morning Routine', from: '09:00', to: '10:00', type: 'free' },
+      { id: uid(), label: 'Work Session', from: '10:00', to: '16:00', type: 'work' },
+      { id: uid(), label: 'Break', from: '16:00', to: '17:00', type: 'break' },
+      { id: uid(), label: 'Work Session', from: '17:00', to: '22:00', type: 'work' },
+      { id: uid(), label: 'Food and Shower', from: '22:00', to: '23:00', type: 'free' },
+      { id: uid(), label: 'Study', from: '23:00', to: '01:00', type: 'study' },
+    ];
+    saveState();
+  }
+  if (!state.studyTasks.length) {
+    state.studyTasks = [
+      { id: uid(), title: 'Django REST Framework serializers', subject: 'Backend', duration: 45, done: false, doneAt: null, timerStart: null, timerElapsed: 0 },
+      { id: uid(), title: 'React hooks useCallback deep dive', subject: 'Frontend', duration: 30, done: false, doneAt: null, timerStart: null, timerElapsed: 0 },
+    ];
+    saveState();
+  }
+}
+
+function uid() { return Math.random().toString(36).substr(2,9); }
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function dateKey(offset=0) {
+  const d = new Date(); d.setDate(d.getDate()+offset);
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function keyToDate(k) { return new Date(k+'T00:00:00'); }
+function pad(n) { return String(n).padStart(2,'0'); }
+function fmt12(t) {
+  if (!t) return '';
+  let [h,m] = t.split(':').map(Number);
+  const ap = h >= 12 ? 'pm' : 'am'; h = h%12||12;
+  return `${h}:${pad(m)}${ap}`;
+}
+function timeToMin(t) {
+  if (!t) return 0;
+  const [h,m] = t.split(':').map(Number); return h*60+m;
+}
+function blockDuration(b) {
+  let s = timeToMin(b.from), e = timeToMin(b.to);
+  if (e <= s) e += 1440; return e - s;
+}
+function fmtHr(min) {
+  const h = Math.floor(min/60), m = min%60;
+  if (h && m) return `${h}h ${m}m`;
+  if (h) return `${h}h`;
+  return `${m}m`;
+}
+
+let authMode = 'signin';
+
+function setAuthMode(mode) {
+  authMode = mode;
+  document.getElementById('signin-tab').classList.toggle('active', mode === 'signin');
+  document.getElementById('signup-tab').classList.toggle('active', mode === 'signup');
+  document.getElementById('auth-title').textContent = mode === 'signin' ? 'Welcome back' : 'Create your space';
+  document.getElementById('auth-sub').textContent = mode === 'signin'
+    ? 'Sign in to continue to your schedule, study tasks, and planning dashboard.'
+    : 'Create an account to start keeping your schedule and study tasks in one private place.';
+  document.getElementById('auth-main-btn').textContent = mode === 'signin' ? 'Sign In' : 'Create Account';
+  document.getElementById('auth-error').textContent = '';
+}
+
+function mockLogin() {
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('app-shell').classList.remove('locked');
+  renderToday();
+  renderAhead();
+  renderStudy();
+  setTimeout(() => showToast('Welcome to DayStack', 'Prototype mode is active. Your changes save only in this browser for now.'), 500);
+}
+
+function logoutUser() {
+  document.getElementById('app-shell').classList.add('locked');
+  document.getElementById('auth-screen').classList.remove('hidden');
+  document.getElementById('auth-error').textContent = '';
+}
+
+function startClock() {
+  function tick() {
+    const n = new Date();
+    document.getElementById('live-clock').textContent =
+      `${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+  }
+  tick(); setInterval(tick, 1000);
+}
+
+let activeView = 'today';
+function switchView(v) {
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById(`view-${v}`).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(el => {
+    if ((v==='ahead' && el.textContent==='Ahead') ||
+        (v==='today' && el.textContent==='Today') ||
+        (v==='study' && el.textContent==='Study')) el.classList.add('active');
+  });
+  activeView = v;
+  if (v==='today') renderToday();
+  if (v==='ahead') renderAhead();
+  if (v==='study') renderStudy();
+}
+
+let selectedDayOffset = 0;
+
+function renderToday() {
+  const key = dateKey(selectedDayOffset);
+  const d = keyToDate(key);
+  document.getElementById('today-heading').textContent = DAYS_FULL[d.getDay()];
+  document.getElementById('today-date-sub').textContent =
+    d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  const strip = document.getElementById('day-strip');
+  strip.innerHTML = '';
+  for (let i=-1; i<=6; i++) {
+    const k = dateKey(i); const dd = keyToDate(k);
+    const blocks = state.blocks[k]||[];
+    const hasWork = blocks.some(b=>b.type==='work');
+    const isFree = blocks.length && !hasWork;
+    const chip = document.createElement('div');
+    chip.className = `day-chip${i===selectedDayOffset?' active':''}${isFree?' free':''}`;
+    chip.innerHTML = `<div class="dname">${DAYS[dd.getDay()]}</div><div class="dnum">${dd.getDate()}</div><div class="dot"></div>`;
+    chip.onclick = () => { selectedDayOffset = i; renderToday(); };
+    strip.appendChild(chip);
+  }
+
+  const blocks = state.blocks[key]||[];
+  let workMin=0, studyMin=0, freeMin=0;
+  blocks.forEach(b => {
+    const d = blockDuration(b);
+    if (b.type==='work') workMin+=d;
+    else if (b.type==='study') studyMin+=d;
+    else if (b.type==='break'||b.type==='free') freeMin+=d;
+  });
+  document.getElementById('today-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-val">${fmtHr(workMin)||'—'}</div><div class="stat-lbl">Work time</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--blue)">${fmtHr(studyMin)||'—'}</div><div class="stat-lbl">Study time</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--green)">${fmtHr(freeMin)||'—'}</div><div class="stat-lbl">Free time</div></div>
+  `;
+
+  const tl = document.getElementById('timeline');
+  if (!blocks.length) {
+    tl.innerHTML = `<div class="empty-day"><h3>No blocks yet</h3><p>Use <strong>Add Block</strong> to plan your day</p></div>`;
+    return;
+  }
+  const sorted = [...blocks].sort((a,b) => timeToMin(a.from)-timeToMin(b.from));
+  tl.innerHTML = sorted.map((b,i) => `
+    <div class="tl-block">
+      <div class="tl-time">${fmt12(b.from)}</div>
+      <div class="tl-line">
+        <div class="tl-dot type-${b.type}"></div>
+        ${i<sorted.length-1?'<div class="tl-bar"></div>':''}
+      </div>
+      <div class="tl-card type-${b.type}">
+        <div class="card-row">
+          <div>
+            <div class="card-label">${b.label}</div>
+            <div class="card-range">${fmt12(b.from)} → ${fmt12(b.to)} · ${fmtHr(blockDuration(b))}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="card-badge badge-${b.type}">${b.type}</span>
+            <div class="card-actions">
+              <button class="icon-btn" onclick="editBlock('${key}','${b.id}')" title="Edit">${SVG.edit}</button>
+              <button class="icon-btn" onclick="deleteBlock('${key}','${b.id}')" title="Delete" style="color:var(--red)">${SVG.trash}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function deleteBlock(key, id) {
+  state.blocks[key] = (state.blocks[key]||[]).filter(b=>b.id!==id);
+  saveState(); renderToday();
+}
+
+let aheadWeek = 1;
+
+function renderAhead() {
+  const tabs = document.getElementById('ahead-tabs');
+  tabs.innerHTML = '';
+  for (let w=1; w<=state.aheadWeeks; w++) {
+    const t = document.createElement('button');
+    t.className = `ahead-tab${w===aheadWeek?' active':''}`;
+    t.textContent = w===1 ? 'This Week' : `Week +${w-1}`;
+    t.onclick=()=>{ aheadWeek=w; renderAhead(); };
+    tabs.appendChild(t);
+  }
+  const addW = document.createElement('button');
+  addW.className='ahead-tab';
+  addW.innerHTML=`${SVG.plus} Week`;
+  addW.onclick=()=>{ state.aheadWeeks=Math.min(state.aheadWeeks+1,8); saveState(); renderAhead(); };
+  tabs.appendChild(addW);
+
+  const grid = document.getElementById('week-grid');
+  grid.innerHTML='';
+  const startOffset = (aheadWeek-1)*7;
+  for (let i=startOffset; i<startOffset+7; i++) {
+    const k = dateKey(i);
+    const d = keyToDate(k);
+    const blocks = state.blocks[k]||[];
+    const hasWork = blocks.some(b=>b.type==='work');
+    const statusCls = hasWork?'working':'free';
+    const statusLbl = hasWork?`${SVG.bolt} Working`:`${SVG.spark} Free Day`;
+    const card = document.createElement('div');
+    card.className='week-card';
+    card.innerHTML=`
+      <div class="wc-day">${DAYS_FULL[d.getDay()]}</div>
+      <div class="wc-date">${d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</div>
+      <div class="wc-status ${statusCls}">${statusLbl}</div>
+      <div class="wc-blocks">
+        ${blocks.slice(0,4).map(b=>`<div class="wc-block-pill"><span>${fmt12(b.from)}</span>${b.label}</div>`).join('')}
+        ${blocks.length>4?`<div class="wc-block-pill" style="color:var(--text3)">+${blocks.length-4} more</div>`:''}
+        ${!blocks.length?`<div class="wc-block-pill" style="color:var(--text3)">No blocks — tap to add</div>`:''}
+      </div>
+    `;
+    card.onclick=()=>{ selectedDayOffset=i; switchView('today'); };
+    grid.appendChild(card);
+  }
+}
+
+function openAddDayModal() { showToast('Day Templates','Template builder is a visual placeholder in this prototype.'); }
+
+const studyTimers = {};
+
+function renderStudy() {
+  const list = document.getElementById('study-list');
+  if (!state.studyTasks.length) {
+    list.innerHTML = `<div class="empty-day"><h3>No study tasks</h3><p>Use <strong>Add Task</strong> to add what you need to study</p></div>`;
+    return;
+  }
+
+  const sorted = [...state.studyTasks].sort((a,b) => a.done - b.done);
+
+  list.innerHTML = sorted.map(t => {
+    const progress = t.done ? 100 : (t.timerElapsed / (t.duration*60) * 100);
+    const isRunning = !!(studyTimers[t.id]);
+    return `
+    <div class="study-card${t.done?' done':''}${isRunning?' timer-active':''}" id="sc-${t.id}">
+      <div class="study-row">
+        <div class="study-check" onclick="toggleStudyDone('${t.id}')">${t.done?SVG.check:''}</div>
+        <div class="study-title">${t.title}</div>
+        ${t.done ? `<span class="done-at">${t.doneAt}</span>` : ''}
+        ${!t.done ? `
+          <button class="icon-btn" style="width:auto;padding:0 10px;margin-left:8px;font-size:11px;color:${isRunning?'var(--red)':'var(--blue)'}"
+            onclick="${isRunning?'pauseTimer':'startTimer'}('${t.id}')">
+            <span class="icon-label">${isRunning?SVG.pause:SVG.play} ${isRunning?'Pause':'Start'}</span>
+          </button>
+        ` : ''}
+        <button class="icon-btn" onclick="deleteStudyTask('${t.id}')" style="color:var(--red);margin-left:4px">${SVG.trash}</button>
+      </div>
+      <div class="study-meta">
+        <span class="icon-label">${SVG.book} ${t.subject||'General'}</span>
+        <span class="icon-label">${SVG.clock} ${t.duration} min</span>
+        ${!t.done && t.timerElapsed > 0 ? `<span style="color:var(--blue)">Elapsed: ${fmtHr(Math.floor(t.timerElapsed/60))}</span>` : ''}
+      </div>
+      <div class="study-timer-bar">
+        <div class="study-timer-fill" id="bar-${t.id}" style="width:${Math.min(progress,100)}%"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleStudyDone(id) {
+  const t = state.studyTasks.find(x=>x.id===id);
+  if (!t) return;
+  if (studyTimers[id]) { clearInterval(studyTimers[id]); delete studyTimers[id]; }
+  t.done = !t.done;
+  if (t.done) {
+    const n = new Date();
+    t.doneAt = `${pad(n.getHours())}:${pad(n.getMinutes())}`;
+    showToast('Task Complete', `"${t.title}" marked as done at ${t.doneAt}`, 'study');
+  } else { t.doneAt = null; }
+  saveState(); renderStudy();
+}
+
+function startTimer(id) {
+  const t = state.studyTasks.find(x=>x.id===id);
+  if (!t || studyTimers[id]) return;
+  const totalSec = t.duration * 60;
+  const startTime = Date.now() - (t.timerElapsed * 1000);
+  studyTimers[id] = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - startTime)/1000);
+    t.timerElapsed = elapsed;
+    const bar = document.getElementById(`bar-${id}`);
+    if (bar) bar.style.width = Math.min(elapsed/totalSec*100,100)+'%';
+    if (elapsed >= totalSec) {
+      clearInterval(studyTimers[id]); delete studyTimers[id];
+      showToast('Time is Up', `Study session for "${t.title}" finished. Great work.`, 'study');
+      saveState(); renderStudy();
+    }
+  }, 1000);
+  renderStudy();
+}
+
+function pauseTimer(id) {
+  if (studyTimers[id]) { clearInterval(studyTimers[id]); delete studyTimers[id]; }
+  saveState(); renderStudy();
+}
+
+function deleteStudyTask(id) {
+  if (studyTimers[id]) { clearInterval(studyTimers[id]); delete studyTimers[id]; }
+  state.studyTasks = state.studyTasks.filter(t=>t.id!==id);
+  saveState(); renderStudy();
+}
+
+let editBlockId = null;
+
+function openAddBlock() {
+  editBlockId = null;
+  document.getElementById('modal-block-title').textContent = 'Add Time Block';
+  document.getElementById('b-label').value = '';
+  document.getElementById('b-from').value = '';
+  document.getElementById('b-to').value = '';
+  document.getElementById('b-type').value = 'work';
+  const sel = document.getElementById('b-day');
+  sel.innerHTML = '';
+  for (let i=-1; i<=13; i++) {
+    const k = dateKey(i); const d = keyToDate(k);
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = `${DAYS_FULL[d.getDay()]} ${d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})}`;
+    if (i===selectedDayOffset) opt.selected = true;
+    sel.appendChild(opt);
+  }
+  document.getElementById('modal-block').classList.add('open');
+}
+
+function editBlock(key, id) {
+  const b = (state.blocks[key]||[]).find(x=>x.id===id);
+  if (!b) return;
+  editBlockId = { key, id };
+  document.getElementById('modal-block-title').textContent = 'Edit Time Block';
+  document.getElementById('b-label').value = b.label;
+  document.getElementById('b-from').value = b.from;
+  document.getElementById('b-to').value = b.to;
+  document.getElementById('b-type').value = b.type;
+  const sel = document.getElementById('b-day');
+  sel.innerHTML = '';
+  for (let i=-1; i<=13; i++) {
+    const k2 = dateKey(i); const d = keyToDate(k2);
+    const opt = document.createElement('option');
+    opt.value = k2; opt.textContent = `${DAYS_FULL[d.getDay()]} ${d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})}`;
+    if (k2===key) opt.selected=true;
+    sel.appendChild(opt);
+  }
+  document.getElementById('modal-block').classList.add('open');
+}
+
+function saveBlock() {
+  const label = document.getElementById('b-label').value.trim();
+  const from = document.getElementById('b-from').value;
+  const to = document.getElementById('b-to').value;
+  const type = document.getElementById('b-type').value;
+  const day = document.getElementById('b-day').value;
+  if (!label || !from || !to) { showToast('Missing fields','Please fill in label, from and to times'); return; }
+
+  if (editBlockId) {
+    const blocks = state.blocks[editBlockId.key]||[];
+    const idx = blocks.findIndex(b=>b.id===editBlockId.id);
+    if (idx>-1) {
+      if (editBlockId.key !== day) {
+        blocks.splice(idx,1);
+        state.blocks[editBlockId.key] = blocks;
+        if (!state.blocks[day]) state.blocks[day]=[];
+        state.blocks[day].push({id:editBlockId.id,label,from,to,type});
+      } else {
+        blocks[idx] = {id:editBlockId.id,label,from,to,type};
+      }
+    }
+  } else {
+    if (!state.blocks[day]) state.blocks[day]=[];
+    state.blocks[day].push({id:uid(),label,from,to,type});
+  }
+
+  saveState();
+  closeModal('modal-block');
+  if (activeView==='today') renderToday();
+  if (activeView==='ahead') renderAhead();
+}
+
+function openEditDay() {
+  const key = dateKey(selectedDayOffset);
+  const blocks = state.blocks[key]||[];
+  const container = document.getElementById('edit-day-blocks');
+  if (!blocks.length) {
+    container.innerHTML = `<div style="color:var(--text2);font-size:13px;text-align:center;padding:20px;">No blocks for this day.</div>`;
+  } else {
+    const sorted = [...blocks].sort((a,b)=>timeToMin(a.from)-timeToMin(b.from));
+    container.innerHTML = sorted.map(b => `
+      <div style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;background:var(--surface2);">
+        <span class="card-badge badge-${b.type}">${b.type}</span>
+        <span style="flex:1;font-size:13px;">${b.label} · ${fmt12(b.from)}–${fmt12(b.to)}</span>
+        <button class="icon-btn" onclick="editBlock('${key}','${b.id}');closeModal('modal-edit-day')" title="Edit">${SVG.edit}</button>
+        <button class="icon-btn" onclick="deleteBlock('${key}','${b.id}');openEditDay()" style="color:var(--red)" title="Delete">${SVG.trash}</button>
+      </div>
+    `).join('');
+  }
+  document.getElementById('modal-edit-day').classList.add('open');
+}
+
+function openAddStudyTask() {
+  document.getElementById('st-title').value='';
+  document.getElementById('st-duration').value='';
+  document.getElementById('st-subject').value='';
+  document.getElementById('modal-study').classList.add('open');
+}
+
+function saveStudyTask() {
+  const title = document.getElementById('st-title').value.trim();
+  const duration = parseInt(document.getElementById('st-duration').value)||45;
+  const subject = document.getElementById('st-subject').value.trim();
+  if (!title) { showToast('Missing','Please enter what to study'); return; }
+  state.studyTasks.push({id:uid(),title,subject,duration,done:false,doneAt:null,timerStart:null,timerElapsed:0});
+  saveState();
+  closeModal('modal-study');
+  renderStudy();
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target===el) el.classList.remove('open'); });
+});
+
+function showToast(title, body, type='default') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast${type==='study'?' study-toast':''}`;
+  t.style.position='relative';
+  t.innerHTML = `
+    <button class="toast-dismiss" onclick="this.parentElement.remove()">${SVG.close}</button>
+    <div class="toast-title">${title}</div>
+    <div class="toast-body">${body}</div>
+  `;
+  c.appendChild(t);
+  setTimeout(()=>{ if(t.parentElement) t.remove(); }, 5000);
+}
+
+function requestNotifPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission().then(p => {
+      if (p==='granted') showToast('Notifications enabled','You will get reminders when study timers finish.');
+    });
+  }
+}
+
+function mountStaticIcons() {
+  const map = {
+    'auth-lock-icon': SVG.lock,
+    'nav-add-icon': SVG.plus,
+    'nav-logout-icon': SVG.logout,
+    'edit-day-icon': SVG.edit,
+    'template-add-icon': SVG.plus,
+    'study-add-icon': SVG.plus
+  };
+  Object.keys(map).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = map[id];
+  });
+}
+
+seedExample();
+startClock();
+requestNotifPermission();
+mountStaticIcons();
+</script>
+</body>
+</html>
